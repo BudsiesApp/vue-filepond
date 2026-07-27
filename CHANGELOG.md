@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Breaking:** component refs now expose only the documented FilePond file-operation methods: `addFile`, `addFiles`, `browse`, `getFile`, `getFiles`, `moveFile`, `prepareFile`, `prepareFiles`, `processFile`, `processFiles`, `removeFile`, `removeFiles`, and `sort`.
+- Configure FilePond options with Vue props; FilePond option and state fields are no longer copied onto component refs.
+- Update the development and regression-test baseline to Vue 2.7.16.
+
 ## 6.0.3
 
 - FilePond esm version also imports vue esm version

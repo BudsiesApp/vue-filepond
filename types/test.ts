@@ -14,20 +14,26 @@ const component = Vue.extend({
   },
   methods: {
     init() {
-      (this.$refs.filepond as VueFilePondComponent).server = {
-        process: (fieldName, file, metadata, load) => {
-          // simulates uploading a file
-          setTimeout(() => {
-            load(Date.now().toString())
-          }, 1500);
-        },
-        load: (source, load) => {
-          // simulates loading a file from the server
-          fetch(source).then(res => res.blob()).then(x => load(x));
-        }
-      }
-
+      const pond = this.$refs.filepond as VueFilePondComponent
+      pond.addFile('file')
+      pond.addFiles(['file'])
+      pond.browse()
+      pond.getFile('file')
+      pond.getFiles()
+      pond.moveFile('file', 0)
+      pond.prepareFile('file')
+      pond.prepareFiles('first', 'second')
+      pond.processFile('file')
+      pond.processFiles(['file'])
+      pond.removeFile('file')
+      pond.removeFiles()
+      pond.sort(() => 0)
     }
   }
-}
-)
+})
+
+type HasKey<Type, Key extends string> = Key extends keyof Type ? true : false
+
+const doesNotExposeSetOptions: HasKey<VueFilePondComponent, 'setOptions'> = false
+const doesNotExposeServer: HasKey<VueFilePondComponent, 'server'> = false
+const doesNotExposeStatus: HasKey<VueFilePondComponent, 'status'> = false

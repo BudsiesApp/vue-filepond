@@ -1,5 +1,5 @@
 // TypeScript Version: 3.6
-import VueConstructor, { Component, ComponentOptions } from "vue"
+import Vue, { ComponentOptions } from "vue"
 import { FilePondOptionProps, FilePondCallbackProps, FilePond } from "filepond";
 
 type Except<ObjectType, KeysType extends keyof ObjectType> = Pick<ObjectType, Exclude<keyof ObjectType, KeysType>>;
@@ -7,23 +7,31 @@ type Except<ObjectType, KeysType extends keyof ObjectType> = Pick<ObjectType, Ex
 /** Props for the component */
 type VueFilepondProps = Except<FilePondOptionProps, keyof FilePondCallbackProps>;
 
-/** Methods that don't exist on the instance */
-type FilteredMethods = 'setOptions' |
-    'on' |
-    'off' |
-    'onOnce' |
-    'appendTo' |
-    'insertAfter' |
-    'insertBefore' |
-    'isAttachedTo' |
-    'replaceElement' |
-    'restoreElement' |
-    'destroy'
+/** FilePond methods intentionally exposed through a component ref */
+type VueFilePondMethod =
+    'addFile' |
+    'addFiles' |
+    'browse' |
+    'getFile' |
+    'getFiles' |
+    'moveFile' |
+    'prepareFile' |
+    'prepareFiles' |
+    'processFile' |
+    'processFiles' |
+    'removeFile' |
+    'removeFiles' |
+    'sort';
 
-type VueFilePondInstanceMethods = Except<FilePond, FilteredMethods>;
+type VueFilePondDeclaredMethod = Extract<VueFilePondMethod, keyof FilePond>;
+
+type VueFilePondInstanceMethods = Pick<FilePond, VueFilePondDeclaredMethod> & {
+    prepareFile: (query?: FilePond['getFile'] extends (query?: infer Query) => any ? Query : never) => Promise<any>;
+    prepareFiles: (...queries: Array<FilePond['getFile'] extends (query?: infer Query) => any ? Query : never>) => Promise<any[]>;
+};
 
 /** Reference type for typed $refs */
-export class VueFilePondComponent extends VueConstructor<VueFilePondInstanceMethods>{ }
+export type VueFilePondComponent = Vue & VueFilePondInstanceMethods;
 
 declare const VueFilePond: (...plugins: any[]) => ComponentOptions<any, VueFilePondInstanceMethods, any, VueFilepondProps>
 
