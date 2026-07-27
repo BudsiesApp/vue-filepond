@@ -2,7 +2,7 @@
  * vue-filepond v6.0.3
  * A handy FilePond adapter component for Vue
  * 
- * Copyright (c) 2020 PQINA
+ * Copyright (c) 2026 PQINA
  * https://pqina.nl/filepond
  * 
  * Licensed under the MIT license.
@@ -16,20 +16,29 @@ import {
     registerPlugin
 } from 'filepond';
 
-// Methods not made available to the component
-const filteredComponentMethods = [
-    'setOptions',
-    'on',
-    'off',
-    'onOnce',
-    'appendTo',
-    'insertAfter',
-    'insertBefore',
-    'isAttachedTo',
-    'replaceElement',
-    'restoreElement',
-    'destroy'
+// FilePond methods intentionally exposed through a component ref
+const componentMethods = [
+    'addFile',
+    'addFiles',
+    'browse',
+    'getFile',
+    'getFiles',
+    'moveFile',
+    'prepareFile',
+    'prepareFiles',
+    'processFile',
+    'processFiles',
+    'removeFile',
+    'removeFiles',
+    'sort'
 ];
+
+const componentMethodDelegates = componentMethods.reduce((methods, method) => {
+    methods[method] = function (...args) {
+        return this._pond[method](...args);
+    };
+    return methods;
+}, {});
 
 // Test if is supported on this client
 const isSupported = supported();
@@ -93,11 +102,12 @@ export default (...plugins) => {
         };
     }
 
-    // create 
+    // create
     return Vue.component('FilePond', {
         name: 'FilePond',
         props,
         watch,
+        methods: componentMethodDelegates,
         render (h) {
             return h('div',
                 {
@@ -128,10 +138,10 @@ export default (...plugins) => {
             if (!isSupported) {
                 return;
             }
-    
+
             // get pond element
             this._element = this.$el.querySelector('input');
-    
+
             // Map FilePond callback methods to Vue $emitters
             const options = events.reduce((obj, value) => {
                 obj[value] = (...args) => {
@@ -140,7 +150,7 @@ export default (...plugins) => {
                 };
                 return obj;
             }, {});
-    
+
             // Scoop up attributes that might not have been caught by Vue ( because the props object is extended dynamically )
             const attrs = Object.assign({}, this.$attrs);
 
@@ -150,38 +160,30 @@ export default (...plugins) => {
                 Object.assign(
                     {},
                     globalOptions,
-                    options, 
-                    attrs, 
+                    options,
+                    attrs,
                     this.$options.propsData
                 )
             );
-            
-            // Copy instance method references to component instance
-            Object.keys(this._pond)
-                .filter(key => !filteredComponentMethods.includes(key))
-                .forEach(key => {
-                    this[key] = this._pond[key];
-                });
 
             // Add to instances so we can apply global options when used
             instances.push(this._pond);
-    
         },
-    
+
         // Will clean up FilePond instance when unmounted
         destroyed () {
 
             // reference to detached method
             const { detached } = this.$options;
-            
+
             // no longer attached, clean up
             if (!this.$el.offsetParent) {
                 detached.call(this);
                 return;
             }
 
-            // if we're still attached it's likely a transition is running, we need to 
-            // determine the moment when we're no longer attached to the DOM so we can 
+            // if we're still attached it's likely a transition is running, we need to
+            // determine the moment when we're no longer attached to the DOM so we can
             // clean up properly
             const mutationHandler = (mutations, observer) => {
                 const removedNodes = (mutations[0] || {}).removedNodes || [];
@@ -201,7 +203,7 @@ export default (...plugins) => {
 
             // exit when no pond defined
             if (!this._pond) return;
-    
+
             // bye bye pond
             this._pond.destroy();
 

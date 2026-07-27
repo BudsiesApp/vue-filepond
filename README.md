@@ -85,7 +85,7 @@ export default {
         handleFilePondInit: function() {
             console.log('FilePond has initialized');
 
-            // FilePond instance methods are available on `this.$refs.pond`
+            // Supported FilePond file-operation methods are available on `this.$refs.pond`
         }
     },
     components: {
@@ -94,6 +94,14 @@ export default {
 };
 </script>
 ```
+
+The component ref intentionally exposes only these FilePond file-operation methods:
+`addFile`, `addFiles`, `browse`, `getFile`, `getFiles`, `moveFile`,
+`prepareFile`, `prepareFiles`, `processFile`, `processFiles`, `removeFile`,
+`removeFiles`, and `sort`.
+
+Configure FilePond options with Vue props. FilePond option and state fields are
+not copied onto the component ref.
 
 When using FilePond with an SSR configuration like Nuxt.js it's best to wrap it in `<no-ssr>` tags.
 

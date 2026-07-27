@@ -2,7 +2,7 @@
  * vue-filepond v6.0.3
  * A handy FilePond adapter component for Vue
  * 
- * Copyright (c) 2020 PQINA
+ * Copyright (c) 2026 PQINA
  * https://pqina.nl/filepond
  * 
  * Licensed under the MIT license.
@@ -26,16 +26,23 @@
   Object.defineProperty(_exports, "__esModule", {
     value: true
   });
-  _exports.default = _exports.setOptions = void 0;
+  _exports.setOptions = _exports.default = void 0;
   _vue = _interopRequireDefault(_vue);
+  function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+  // FilePond methods intentionally exposed through a component ref
+  var componentMethods = ['addFile', 'addFiles', 'browse', 'getFile', 'getFiles', 'moveFile', 'prepareFile', 'prepareFiles', 'processFile', 'processFiles', 'removeFile', 'removeFiles', 'sort'];
+  var componentMethodDelegates = componentMethods.reduce(function (methods, method) {
+    methods[method] = function () {
+      var _this$_pond;
+      return (_this$_pond = this._pond)[method].apply(_this$_pond, arguments);
+    };
+    return methods;
+  }, {});
 
-  function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+  // Test if is supported on this client
+  var isSupported = (0, _filepond.supported)();
 
-  // Methods not made available to the component
-  var filteredComponentMethods = ['setOptions', 'on', 'off', 'onOnce', 'appendTo', 'insertAfter', 'insertBefore', 'isAttachedTo', 'replaceElement', 'restoreElement', 'destroy']; // Test if is supported on this client
-
-  var isSupported = (0, _filepond.supported)(); // Setup initial prop types and update when plugins are added
-
+  // Setup initial prop types and update when plugins are added
   var getNativeConstructorFromType = function getNativeConstructorFromType(type) {
     return {
       string: String,
@@ -46,61 +53,60 @@
       serverapi: Object,
       object: Object
     }[type];
-  }; // Activated props
+  };
 
+  // Activated props
+  var props = {};
 
-  var props = {}; // Events that need to be mapped to emitters
+  // Events that need to be mapped to emitters
+  var events = [];
 
-  var events = []; // Props to watch
+  // Props to watch
+  var watch = {};
 
-  var watch = {}; // all active instances
+  // all active instances
+  var instances = [];
 
-  var instances = []; // global options
-
+  // global options
   var globalOptions = {};
-
-  var setOptions = function setOptions(options) {
+  var setOptions = _exports.setOptions = function setOptions(options) {
     globalOptions = Object.assign(globalOptions, options);
     instances.forEach(function (instance) {
       instance.setOptions(globalOptions);
     });
   };
-
-  _exports.setOptions = setOptions;
-
-  var _default = function _default() {
+  var _default = _exports.default = function _default() {
     // register plugins in FilePond
-    _filepond.registerPlugin.apply(void 0, arguments); // build events and props array
+    _filepond.registerPlugin.apply(void 0, arguments);
 
-
+    // build events and props array
     events.length = 0;
-
     var _loop = function _loop(prop) {
       // don't add events to the props array
       if (/^on/.test(prop)) {
         events.push(prop);
         return "continue";
-      } // get property type ( can be either a String or the type defined within FilePond )
+      }
 
+      // get property type ( can be either a String or the type defined within FilePond )
+      props[prop] = [String, getNativeConstructorFromType(_filepond.OptionTypes[prop])];
 
-      props[prop] = [String, getNativeConstructorFromType(_filepond.OptionTypes[prop])]; // setup watcher
-
+      // setup watcher
       watch[prop] = function (value) {
         this._pond[prop] = value;
       };
     };
-
     for (var prop in _filepond.OptionTypes) {
       var _ret = _loop(prop);
-
       if (_ret === "continue") continue;
-    } // create 
+    }
 
-
+    // create
     return _vue.default.component('FilePond', {
       name: 'FilePond',
       props: props,
       watch: watch,
+      methods: componentMethodDelegates,
       render: function render(h) {
         return h('div', {
           'class': {
@@ -122,65 +128,57 @@
       // Will setup FilePond instance when mounted
       mounted: function mounted() {
         var _this = this;
-
         // exit here if not supported
         if (!isSupported) {
           return;
-        } // get pond element
+        }
 
+        // get pond element
+        this._element = this.$el.querySelector('input');
 
-        this._element = this.$el.querySelector('input'); // Map FilePond callback methods to Vue $emitters
-
+        // Map FilePond callback methods to Vue $emitters
         var options = events.reduce(function (obj, value) {
           obj[value] = function () {
             _this.$emit('input', _this._pond ? _this._pond.getFiles() : []);
-
             for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
               args[_key] = arguments[_key];
             }
-
             _this.$emit.apply(_this, [value.substr(2)].concat(args));
           };
-
           return obj;
-        }, {}); // Scoop up attributes that might not have been caught by Vue ( because the props object is extended dynamically )
+        }, {});
 
-        var attrs = Object.assign({}, this.$attrs); // Create our pond
+        // Scoop up attributes that might not have been caught by Vue ( because the props object is extended dynamically )
+        var attrs = Object.assign({}, this.$attrs);
 
-        this._pond = (0, _filepond.create)(this._element, Object.assign({}, globalOptions, options, attrs, this.$options.propsData)); // Copy instance method references to component instance
+        // Create our pond
+        this._pond = (0, _filepond.create)(this._element, Object.assign({}, globalOptions, options, attrs, this.$options.propsData));
 
-        Object.keys(this._pond).filter(function (key) {
-          return !filteredComponentMethods.includes(key);
-        }).forEach(function (key) {
-          _this[key] = _this._pond[key];
-        }); // Add to instances so we can apply global options when used
-
+        // Add to instances so we can apply global options when used
         instances.push(this._pond);
       },
       // Will clean up FilePond instance when unmounted
       destroyed: function destroyed() {
         var _this2 = this;
-
         // reference to detached method
         var detached = this.$options.detached; // no longer attached, clean up
-
         if (!this.$el.offsetParent) {
           detached.call(this);
           return;
-        } // if we're still attached it's likely a transition is running, we need to 
-        // determine the moment when we're no longer attached to the DOM so we can 
+        }
+
+        // if we're still attached it's likely a transition is running, we need to
+        // determine the moment when we're no longer attached to the DOM so we can
         // clean up properly
-
-
         var mutationHandler = function mutationHandler(mutations, observer) {
           var removedNodes = (mutations[0] || {}).removedNodes || [];
           var removedNode = removedNodes[0];
           if (!removedNode || !removedNode.contains(_this2.$el)) return;
           observer.disconnect();
           detached.call(_this2);
-        }; // start observing parent element for changes to the DOM
+        };
 
-
+        // start observing parent element for changes to the DOM
         var observer = new MutationObserver(mutationHandler);
         observer.observe(document.documentElement, {
           childList: true,
@@ -190,24 +188,22 @@
       // called when the component root node has been detached
       detached: function detached() {
         // exit when no pond defined
-        if (!this._pond) return; // bye bye pond
+        if (!this._pond) return;
 
-        this._pond.destroy(); // remove from instances
+        // bye bye pond
+        this._pond.destroy();
 
-
+        // remove from instances
         var index = instances.indexOf(this._pond);
-
         if (index >= 0) {
           instances.splice(index, 1);
-        } // clear reference
+        }
 
-
+        // clear reference
         this._pond = null;
       }
     });
   };
-
-  _exports.default = _default;
 });
 
 
