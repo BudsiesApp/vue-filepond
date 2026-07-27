@@ -6,7 +6,6 @@
     "license": "MIT",
     "repository": "pqina/vue-filepond",
     "main": "dist/vue-filepond.js",
-    "browser": "dist/vue-filepond.js",
     "module": "dist/vue-filepond.esm.js",
     "unpkg": "dist/vue-filepond.min.js",
     "types": "types/index.d.ts",
@@ -34,7 +33,7 @@
         "build": "mkdirp dist && npm run build:browser && npm run build:module",
         "build:browser": "babel lib | bannerjs -m > dist/vue-filepond.js",
         "postbuild:browser": "uglifyjs dist/vue-filepond.js --compress --comments '/^!/' --output dist/vue-filepond.min.js",
-        "build:module": "minicat lib/index.js | replace \"import Vue from 'vue';\" \"import Vue from 'vue/dist/vue.esm';\" -z | bannerjs -m > dist/vue-filepond.esm.js",
+        "build:module": "minicat lib/index.js | bannerjs -m > dist/vue-filepond.esm.js",
         "build:watch": "nodemon --watch lib -x \"npm run build\"",
         "test:runtime": "jest --runInBand",
         "test:types": "tsc --project types/tsconfig.json",
@@ -62,6 +61,7 @@
         "typescript": "4.9.5",
         "uglify-js": "^3.7.3",
         "vue": "2.7.16",
-        "vue-template-compiler": "2.7.16"
+        "vue-template-compiler": "2.7.16",
+        "webpack": "5.97.1"
     }
 }
